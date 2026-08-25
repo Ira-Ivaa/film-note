@@ -89,7 +89,7 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="panel space-y-5 p-4 sm:p-5">
       <form onSubmit={search} className="flex flex-wrap items-end gap-2">
         <div className="min-w-56 flex-1">
           <input
@@ -155,11 +155,11 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
           {results.map((result) => {
             const isOwned = ownershipKeys(result).some((key) => owned.has(key));
             return (
-              <li key={result.key} className="card flex gap-3 p-3">
+              <li key={result.key} className="flex gap-4 rounded-3xl border border-fg/9 bg-surface/58 p-3.5 backdrop-blur-lg transition hover:border-accent/40">
                 <Poster
                   url={result.posterUrl}
                   name={result.name}
-                  className="h-27 w-18 shrink-0 rounded-md"
+                  className="aspect-2/3 w-20 shrink-0 rounded-xl shadow-lg shadow-black/60"
                 />
 
                 <div className="min-w-0 flex-1">

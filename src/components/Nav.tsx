@@ -1,49 +1,62 @@
 import Link from 'next/link';
 
 import { LogoutButton } from '@/components/LogoutButton';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import type { SessionUser } from '@/lib/auth';
 
 const LINKS = [
-  { href: '/library', label: 'Моя библиотека' },
+  { href: '/library', label: 'Библиотека' },
   { href: '/search', label: 'Поиск' },
   { href: '/friends', label: 'Друзья' },
 ];
 
 /**
- * Top bar. Active-link highlighting is intentionally left to CSS-free simple
- * styling so this stays a Server Component (no usePathname).
+ * Floating glass pill. Stays a Server Component — active-link highlighting
+ * would need usePathname, and the only interactive parts (theme, logout) are
+ * their own client islands.
+ *
+ * On phones it stops being sticky and scrolls horizontally instead: two pinned
+ * bars on a short screen eat the content, and these links will not wrap into
+ * anything readable.
  */
 export function Nav({ user }: { user: SessionUser }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-ink/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <Link href="/library" className="text-lg font-semibold tracking-tight">
-          Film<span className="text-accent">Note</span>
+    <div className="mx-auto max-w-7xl px-3 pt-3 sm:px-5 sm:pt-5">
+      <nav
+        className="glass scroll-row flex items-center gap-0.5 rounded-full px-2 py-1.5
+          sm:sticky sm:top-4 sm:z-30 sm:gap-1 sm:px-3 sm:py-2"
+      >
+        <Link
+          href="/library"
+          className="shrink-0 px-2 text-base font-bold tracking-tight sm:px-3 sm:text-lg"
+        >
+          Film<span className="text-accent-lift">Note</span>
         </Link>
 
-        <nav className="flex items-center gap-1 text-sm">
-          {LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-lg px-2.5 py-1.5 text-muted transition hover:bg-surface-3 hover:text-fg"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {LINKS.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="shrink-0 rounded-full px-3 py-1.5 text-sm text-muted transition
+              hover:bg-fg/8 hover:text-fg"
+          >
+            {link.label}
+          </Link>
+        ))}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-2">
+          <ThemeSwitcher />
           <Link
             href="/settings"
-            className="rounded-lg px-2.5 py-1.5 text-sm text-muted transition hover:bg-surface-3 hover:text-fg"
+            title={`${user.displayName} · @${user.username}`}
+            className="hidden rounded-full px-3 py-1.5 text-sm text-muted transition
+              hover:bg-fg/8 hover:text-fg sm:block"
           >
             {user.displayName}
-            <span className="ml-1 text-xs text-muted/70">@{user.username}</span>
           </Link>
           <LogoutButton />
         </div>
-      </div>
-    </header>
+      </nav>
+    </div>
   );
 }

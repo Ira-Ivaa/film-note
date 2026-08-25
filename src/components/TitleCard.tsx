@@ -1,71 +1,97 @@
-import { Badge, Poster } from '@/components/ui';
-import { KIND_LABELS, STATUS_LABELS, STATUS_STYLES } from '@/lib/labels';
+import { Poster } from '@/components/ui';
+import { KIND_LABELS, STATUS_SHORT } from '@/lib/labels';
 import type { LibraryItem } from '@/lib/library';
 
 /**
- * One library row rendered as a poster card. `onOpen` is omitted for read-only
- * views (a friend's library), which then renders a non-interactive article.
+ * Grid tile: artwork only. The title and a short synopsis surface over the
+ * poster on hover or keyboard focus, so a shelf of covers reads like a shelf
+ * of covers rather than a table of captions.
+ *
+ * On touch there is no hover, so the caption stays open permanently in a
+ * compact form — title and meta, synopsis dropped, since four lines of text
+ * over a phone-sized poster are unreadable anyway.
+ *
+ * `onOpen` is omitted for a friend's library, which renders a plain article.
  */
-export function TitleCard({
-  item,
-  onOpen,
-}: {
-  item: LibraryItem;
-  onOpen?: () => void;
-}) {
+export function TitleCard({ item, onOpen }: { item: LibraryItem; onOpen?: () => void }) {
   const { entry, title } = item;
+
+  const meta = [KIND_LABELS[title.kind], title.year, STATUS_SHORT[entry.status], entry.progress]
+    .filter(Boolean)
+    .join(' · ');
 
   const body = (
     <>
-      <div className="relative aspect-2/3 w-full overflow-hidden rounded-t-[calc(var(--radius-card)-1px)]">
-        <Poster url={title.posterUrl} name={title.name} className="size-full" />
+      <Poster
+        url={title.posterUrl}
+        name={title.name}
+        className="absolute inset-0 size-full transition duration-500
+          group-hover:scale-105 group-hover:brightness-[0.72]
+          group-focus-visible:scale-105 group-focus-visible:brightness-[0.72]
+          touch:scale-100 touch:brightness-100"
+      />
 
-        {entry.rating !== null ? (
+      {/* Always-on markers sit above the veil so the caption never hides them. */}
+      {entry.rating !== null ? (
+        <span
+          className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-xs
+            font-semibold text-accent-fg shadow-md shadow-black/50"
+        >
+          ★ {entry.rating}
+        </span>
+      ) : null}
+
+      {entry.isFavorite ? (
+        <span
+          title="В избранном"
+          className="absolute top-2 left-2.5 z-10 text-sm text-accent-lift drop-shadow-md"
+        >
+          ♥
+        </span>
+      ) : null}
+
+      <span
+        className="veil absolute inset-0 z-3 flex flex-col justify-end p-3 opacity-0
+          transition-opacity duration-300 group-hover:opacity-100
+          group-focus-visible:opacity-100 touch:p-2.5 touch:opacity-100"
+      >
+        <span
+          className="mb-2 h-0.5 w-7 rounded-full bg-accent transition-transform duration-300
+            translate-y-2 group-hover:translate-y-0 group-focus-visible:translate-y-0 touch:hidden"
+        />
+        <span
+          className="translate-y-2 text-[0.95rem] leading-tight font-semibold transition-transform
+            duration-300 group-hover:translate-y-0 group-focus-visible:translate-y-0
+            touch:translate-y-0 touch:text-[0.82rem]"
+        >
+          {title.name}
+        </span>
+        <span
+          className="translate-y-2 text-xs text-accent-lift transition-transform duration-300
+            group-hover:translate-y-0 group-focus-visible:translate-y-0
+            touch:translate-y-0 touch:text-[0.66rem]"
+        >
+          {meta}
+        </span>
+        {title.overview ? (
           <span
-            className="absolute top-2 right-2 rounded-full bg-ink/85 px-2 py-0.5 text-xs
-              font-semibold text-accent"
+            className="mt-1.5 line-clamp-4 translate-y-2 text-xs leading-snug text-fg-dim
+              transition-transform duration-300 group-hover:translate-y-0
+              group-focus-visible:translate-y-0 touch:hidden"
           >
-            ★ {entry.rating}
+            {title.overview}
           </span>
         ) : null}
-
-        {entry.isFavorite ? (
-          <span className="absolute top-2 left-2 text-sm" title="В избранном">
-            ❤
-          </span>
-        ) : null}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <div>
-          <p className="line-clamp-2 text-sm leading-snug font-medium">{title.name}</p>
-          <p className="mt-0.5 text-xs text-muted">
-            {[KIND_LABELS[title.kind], title.year ?? null].filter(Boolean).join(' · ')}
-          </p>
-        </div>
-
-        <div className="mt-auto flex flex-wrap items-center gap-1.5">
-          <Badge className={STATUS_STYLES[entry.status]}>{STATUS_LABELS[entry.status]}</Badge>
-          {entry.progress ? (
-            <Badge className="border-line bg-surface-3 text-muted">{entry.progress}</Badge>
-          ) : null}
-        </div>
-      </div>
+      </span>
     </>
   );
 
-  const shell = 'card flex flex-col overflow-hidden text-left transition';
-
   if (!onOpen) {
-    return <article className={shell}>{body}</article>;
+    return <article className="tile group aspect-2/3">{body}</article>;
   }
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className={`${shell} hover:border-accent/50 hover:shadow-lg hover:shadow-black/30`}
-    >
+    <button type="button" onClick={onOpen} className="tile tile-lift group aspect-2/3 text-left">
       {body}
     </button>
   );

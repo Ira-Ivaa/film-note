@@ -18,6 +18,7 @@ Machine-readable project contract. Keep in sync with code when structure changes
 | ui | React | 19.2.8 | |
 | language | TypeScript | 5.9.3 | `strict`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax` |
 | styles | Tailwind CSS | 4.3.3 | CSS-first config in `src/app/globals.css`, no `tailwind.config.js` |
+| font | Onest via `next/font/google` | — | self-hosted, latin + cyrillic subsets |
 | db | Neon serverless Postgres | — | free tier, autosuspends when idle |
 | db client | `@neondatabase/serverless` + `drizzle-orm/neon-http` | 1.1.0 / 0.45.2 | HTTP driver |
 | migrations | drizzle-kit | 0.31.10 | |
@@ -77,6 +78,7 @@ src/lib/friends.ts            friendship queries + mutations
 src/lib/search.ts             SearchResult / SearchResponse DTO (shared client+server)
 src/lib/images.ts             poster URL mapping: TMDB -> proxy route (client-safe)
 src/lib/labels.ts             Russian UI labels, status/kind ordering and styles
+src/lib/theme.ts              accent + density prefs, localStorage keys, bootstrap script
 src/lib/client.ts             browser fetch wrapper, ApiError
 src/app/(auth)/               login, register (redirect away when signed in)
 src/app/(app)/                authenticated shell; layout calls requireUser()
@@ -163,8 +165,25 @@ POST `/friends/requests` auto-accepts when the target already has a pending requ
 - Comments explain WHY (constraints, invariants), not WHAT. Match existing density.
 - Prefer `type` over `interface`. Discriminated unions for results (`{ok:true,...} | {ok:false,...}`) instead of throwing across layers.
 - `Record<Enum, T>` lookup maps over `switch` for label/style tables.
-- Tailwind: use the `@theme` tokens (`bg-surface`, `text-muted`, `text-accent`, `border-line`) and the `card` / `input-base` utilities. Dark theme only — do not add `dark:` variants.
+- Tailwind: use the `@theme` tokens (`bg-surface`, `text-muted`, `text-accent`, `border-line`) and the `glass` / `panel` / `card` / `tile` / `input-base` utilities from `globals.css`. Dark theme only — never add `dark:` or `light:` variants.
 - Server Components are the default; add `'use client'` only for state, effects or event handlers.
+
+## DESIGN SYSTEM
+
+Dark only. There is no light theme and none is wanted: an accent that must stay
+readable on both white and near-black ends up a compromise hue, and dropping
+light is what lets these accents be this saturated.
+
+- **Accent** is one of seven ids in `src/lib/theme.ts` (`gold`, `emerald`, `sapphire`, `amethyst`, `ruby`, `turquoise`, `copper`), stored in `localStorage` under `fn-accent` and applied as `data-accent` on `<html>`.
+- **Overrides use `html[data-accent='…']`** (specificity 0,1,1), NOT `[data-accent]` or `:root`. Tailwind emits `@theme` values into `:root` (0,1,0); an equal-specificity selector would depend on source order, and a rebuild could silently undo all seven themes.
+- **`THEME_BOOTSTRAP`** is inlined in `<head>` by the root layout and applies the stored accent before first paint. Without it every visit flashes the default gold. Keep it tiny — it is blocking script in the critical path.
+- **Density** (`grid` | `list`) is stored under `fn-density`. `LibraryBrowser` starts from the default and adopts the stored value in an effect: reading `localStorage` during render would desync server and client markup.
+- **Grid tiles show artwork only.** Title, meta and synopsis surface over the poster on hover / focus. Rating and favourite are the only always-on markers.
+- **`@custom-variant touch (@media (hover: none))`** is how hover-only affordances declare their touch fallback — on a touch screen the tile caption stays open permanently and the synopsis is dropped. Never gate hover behaviour on viewport width: a small laptop has hover, a large tablet does not.
+- **The accent appears in the layout only as the `panel` shadow** — a wide halo reading as light off the glass. Do not reintroduce a full-page gradient.
+- **`tile` clips its children** (`overflow: hidden` keeps the poster inside the rounded corners), so its glow must be a coloured `box-shadow`; a blurred pseudo-element behind it is cut off by that same clip.
+- Motion is present but restrained, and `prefers-reduced-motion` kills it globally in `globals.css`.
+- Fonts must cover **Cyrillic** — the UI is Russian. Most fashionable Latin display faces (Instrument Serif, Sora, Space Grotesk) do not, and silently fall back mid-sentence. Check the Google Fonts subset list before adopting a face.
 
 ## DEPLOYMENT (all free tiers)
 

@@ -10,14 +10,14 @@ type ButtonVariant = 'primary' | 'ghost' | 'outline' | 'danger';
 type ButtonSize = 'sm' | 'md';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-accent-fg hover:brightness-110 font-semibold',
-  ghost: 'text-muted hover:text-fg hover:bg-surface-3',
-  outline: 'border border-line text-fg hover:bg-surface-3',
-  danger: 'border border-danger/40 text-danger hover:bg-danger/10',
+  primary: 'bg-accent text-accent-fg font-semibold hover:brightness-110',
+  ghost: 'text-muted hover:text-fg hover:bg-fg/8',
+  outline: 'border border-line text-fg hover:border-line-strong hover:bg-fg/6',
+  danger: 'border border-danger/40 text-danger hover:bg-danger/12',
 };
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
-  sm: 'px-2.5 py-1 text-xs',
+  sm: 'px-3 py-1 text-xs',
   md: 'px-4 py-2 text-sm',
 };
 
@@ -33,23 +33,17 @@ export function Button({
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg transition
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full transition
         disabled:cursor-not-allowed disabled:opacity-50
         ${BUTTON_VARIANTS[variant]} ${BUTTON_SIZES[size]} ${className}`}
     />
   );
 }
 
-export function Badge({
-  children,
-  className = '',
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function Badge({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px]
         leading-tight whitespace-nowrap ${className}`}
     >
       {children}
@@ -77,8 +71,8 @@ export function Poster({
   if (!src) {
     return (
       <div
-        className={`flex items-center justify-center bg-surface-3 text-center
-          text-[11px] leading-tight text-muted px-2 ${className}`}
+        className={`flex items-center justify-center bg-surface-3 px-2 text-center
+          text-[11px] leading-tight text-muted ${className}`}
       >
         <span className="line-clamp-4">{name}</span>
       </div>
@@ -92,7 +86,7 @@ export function Poster({
       alt={`Постер: ${name}`}
       loading="lazy"
       decoding="async"
-      className={`object-cover bg-surface-3 ${className}`}
+      className={`bg-surface-3 object-cover ${className}`}
     />
   );
 }
@@ -123,13 +117,22 @@ export function Field({
   );
 }
 
-export function Alert({ children, tone = 'error' }: { children: ReactNode; tone?: 'error' | 'info' }) {
+export function Alert({
+  children,
+  tone = 'error',
+}: {
+  children: ReactNode;
+  tone?: 'error' | 'info';
+}) {
   const styles =
     tone === 'error'
       ? 'border-danger/40 bg-danger/10 text-danger'
-      : 'border-line bg-surface-2 text-muted';
+      : 'border-accent/30 bg-accent/10 text-accent-lift';
   return (
-    <p role={tone === 'error' ? 'alert' : undefined} className={`rounded-lg border px-3 py-2 text-sm ${styles}`}>
+    <p
+      role={tone === 'error' ? 'alert' : undefined}
+      className={`rounded-xl border px-3.5 py-2.5 text-sm ${styles}`}
+    >
       {children}
     </p>
   );
@@ -137,7 +140,7 @@ export function Alert({ children, tone = 'error' }: { children: ReactNode; tone?
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="card px-6 py-12 text-center">
+    <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
       <p className="text-base font-medium">{title}</p>
       {children ? <p className="mx-auto mt-2 max-w-md text-sm text-muted">{children}</p> : null}
     </div>

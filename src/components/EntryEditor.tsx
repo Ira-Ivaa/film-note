@@ -90,7 +90,7 @@ export function EntryEditor({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/85 p-4 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-label={`Редактирование: ${title.name}`}
@@ -98,12 +98,12 @@ export function EntryEditor({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="card my-auto w-full max-w-2xl p-5 sm:p-6">
+      <div className="glass my-auto w-full max-w-2xl rounded-3xl p-5 sm:p-6">
         <div className="flex gap-4">
           <Poster
             url={title.posterUrl}
             name={title.name}
-            className="hidden h-40 w-27 shrink-0 rounded-lg sm:block"
+            className="hidden aspect-2/3 w-28 shrink-0 rounded-xl shadow-lg shadow-black/60 sm:block"
           />
 
           <div className="min-w-0 flex-1">
