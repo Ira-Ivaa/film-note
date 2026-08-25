@@ -1,3 +1,4 @@
+import { displayPosterUrl } from '@/lib/images';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 /*
@@ -56,7 +57,12 @@ export function Badge({
   );
 }
 
-/** Poster image with a typographic fallback when there is no artwork. */
+/**
+ * Poster image with a typographic fallback when there is no artwork.
+ *
+ * Every poster in the app renders through here, which is why the TMDB proxy
+ * rewrite lives at this single point.
+ */
 export function Poster({
   url,
   name,
@@ -66,7 +72,9 @@ export function Poster({
   name: string;
   className?: string;
 }) {
-  if (!url) {
+  const src = displayPosterUrl(url);
+
+  if (!src) {
     return (
       <div
         className={`flex items-center justify-center bg-surface-3 text-center
@@ -80,7 +88,7 @@ export function Poster({
     // Plain <img>: posters come pre-sized from TMDB / Blob, so next/image
     // optimization (and its Hobby transform quota) is not needed.
     <img
-      src={url}
+      src={src}
       alt={`Постер: ${name}`}
       loading="lazy"
       decoding="async"

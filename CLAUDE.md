@@ -75,6 +75,7 @@ src/lib/titles.ts             catalog reads/writes, TMDB import, orphan pruning
 src/lib/library.ts            entry queries + upsert/patch/delete, LibraryItem DTO
 src/lib/friends.ts            friendship queries + mutations
 src/lib/search.ts             SearchResult / SearchResponse DTO (shared client+server)
+src/lib/images.ts             poster URL mapping: TMDB -> proxy route (client-safe)
 src/lib/labels.ts             Russian UI labels, status/kind ordering and styles
 src/lib/client.ts             browser fetch wrapper, ApiError
 src/app/(auth)/               login, register (redirect away when signed in)
@@ -87,7 +88,7 @@ src/components/               React components; 'use client' only where stateful
 
 1. Route handlers and pages contain NO SQL. Data access lives in `src/lib/{library,titles,friends,auth}.ts`.
 2. Every request body is parsed with a zod schema from `src/lib/validation.ts` via `readJson`.
-3. Every API response uses `ok()` / `fail()` from `src/lib/api.ts`. Error shape is always `{ error: { code, message, details? } }`.
+3. Every API response uses `ok()` / `fail()` from `src/lib/api.ts`. Error shape is always `{ error: { code, message, details? } }`. Sole exception: `/api/tmdb-image/:size/:file` serves image bytes.
 4. Wrap route handler bodies in `guard(async () => ...)`.
 5. Authorization: `requireApiUser()` in route handlers, `requireUser()` in Server Components, `canViewLibrary()` for another user's data.
 6. Pages fetch via the `src/lib/*` functions directly (no internal HTTP to own API). Client components use `api()` from `src/lib/client.ts`.
@@ -133,6 +134,7 @@ All paths under `/api`. All non-listed methods return 405 from the framework.
 | DELETE `/friends/requests/:id` | session, either party | — | 200 `{ok}` |
 | GET `/users/:username/library` | visibility-gated | `?status=&kind=&q=&sort=` | 200 `{user,items,stats}` |
 | PATCH `/profile` | session | `{displayName?,listVisibility?}` | 200 `{user}` |
+| GET `/tmdb-image/:size/:file` | none | — | 200 image bytes, immutable cache |
 
 POST `/entries` carries EXACTLY ONE of `titleId` | `tmdb` | `custom` (enforced by `entryUpsertSchema.refine`).
 
@@ -150,6 +152,8 @@ POST `/friends/requests` auto-accepts when the target already has a pending requ
 - **Object names for uploads are server-generated** (`posters/<uuid>.<ext>`). Never build a storage path from client input.
 - **Login must not leak account existence**: unknown email calls `burnPasswordTime()` and returns the same 401 message as a wrong password.
 - Neon free tier autosuspends on idle; the first request after a pause is slow. Not a bug.
+- **`titles.poster_url` stores the CANONICAL upstream URL**, including `https://image.tmdb.org/t/p/...`. The TMDB -> `/api/tmdb-image/...` rewrite happens at render time in `displayPosterUrl()`, called from the single `Poster` component. Never rewrite on write: that would need a migration and would bake the proxy into the data. A direct `image.tmdb.org` URL therefore still appears in serialized RSC payloads — that is data, not a fetched resource.
+- **`/api/tmdb-image` must stay unauthenticated and strictly validated.** `<img>` cannot send auth, and a session check would kill CDN caching. `isTmdbImageRef()` is the only thing preventing an open proxy: known TMDB rendition size plus a bare content-hash file name. Do not loosen either check.
 - **Every TMDB failure mode must be a `TmdbError`.** `request()` in `src/lib/tmdb.ts` wraps network faults (ISP blocks reset the connection -> `ECONNREFUSED`), non-2xx and malformed JSON, and applies an 8s `AbortSignal.timeout`. Callers catch `TmdbError` and degrade: search returns local results with `tmdbUnavailable: true`, `upsertEntry` returns `reason: 'tmdb_unavailable'` -> 502. A raw `fetch` rejection escaping to `guard()` is a bug — it becomes an opaque 500 and hides local results.
 
 ## CONVENTIONS
