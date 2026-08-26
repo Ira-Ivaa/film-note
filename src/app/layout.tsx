@@ -26,9 +26,23 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+/*
+ * `suppressHydrationWarning` on <html> is required, not cosmetic:
+ * THEME_BOOTSTRAP rewrites data-accent before React hydrates, so the attribute
+ * React rendered (the default) and the one in the DOM (the stored accent)
+ * legitimately differ. It silences warnings for this element's own attributes
+ * only — one level deep, not the whole tree.
+ *
+ * The default stays in the JSX so the page is themed even with JS disabled.
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" data-accent={DEFAULT_ACCENT} className={onest.variable}>
+    <html
+      lang="ru"
+      data-accent={DEFAULT_ACCENT}
+      className={onest.variable}
+      suppressHydrationWarning
+    >
       <head>
         {/*
           Applies the stored accent before first paint. Without it every visit
