@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { RatingInput } from '@/components/RatingInput';
 import { Alert, Button, Field, Poster, Spinner } from '@/components/ui';
@@ -43,6 +44,13 @@ export function EntryEditor({
   const [pending, setPending] = useState<'save' | 'delete' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /*
+   * The dialog is portalled to <body>, so it needs a mount flag: `document`
+   * does not exist while this renders on the server.
+   */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose();
@@ -50,6 +58,15 @@ export function EntryEditor({
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
+
+  // The page behind a modal must not scroll away under it.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
 
   async function save() {
     setError(null);
@@ -88,7 +105,16 @@ export function EntryEditor({
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  /*
+   * Portalled to <body> on purpose. `panel` and `glass` use backdrop-filter,
+   * and a filter effect makes an element a containing block for its
+   * position: fixed descendants — rendered in place, this dialog would be
+   * positioned against the panel and clipped inside it instead of covering the
+   * viewport.
+   */
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/85 p-4 backdrop-blur-md"
       role="dialog"
@@ -223,6 +249,7 @@ export function EntryEditor({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
