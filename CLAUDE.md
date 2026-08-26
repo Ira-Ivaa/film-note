@@ -75,6 +75,7 @@ src/lib/storage.ts            poster upload (local | vercel-blob)
 src/lib/titles.ts             catalog reads/writes, TMDB import, orphan pruning
 src/lib/library.ts            entry queries + upsert/patch/delete, LibraryItem DTO
 src/lib/friends.ts            friendship queries + mutations
+src/lib/recommendations.ts    suggested titles: send / list / accept / decline
 src/lib/search.ts             SearchResult / SearchResponse DTO (shared client+server)
 src/lib/images.ts             poster URL mapping: TMDB -> proxy route (client-safe)
 src/lib/labels.ts             Russian UI labels, status/kind ordering and styles
@@ -98,7 +99,7 @@ src/components/               React components; 'use client' only where stateful
 
 ## DATA MODEL
 
-Tables: `users`, `sessions`, `titles`, `entries`, `friendships`.
+Tables: `users`, `sessions`, `titles`, `entries`, `friendships`, `recommendations`.
 
 Invariants:
 
@@ -111,6 +112,8 @@ Invariants:
 - `titles.kind` vocabulary: `movie | series | dorama | anime | cartoon | other`. Derived from TMDB by `deriveKind()`; user may override.
 - `entries.status` vocabulary: `planned | watching | on_hold | watched | dropped`.
 - `users.list_visibility`: `private | friends | public`, default `friends`.
+- `recommendations` is a directed offer, never a write into someone's library. Unique on `(from_user_id, to_user_id, title_id)`; re-sending revives the row (status back to `pending`) instead of stacking duplicates. CHECK forbids self-rows.
+- `entries.suggested_by_user_id` records who suggested a title, set when a recommendation is accepted. Denormalised deliberately: it is a fact about how the entry came to be, and it spares every library read a join through `recommendations`. `ON DELETE SET NULL`.
 
 ## API CONTRACT
 
@@ -136,14 +139,23 @@ All paths under `/api`. All non-listed methods return 405 from the framework.
 | DELETE `/friends/requests/:id` | session, either party | — | 200 `{ok}` |
 | GET `/users/:username/library` | visibility-gated | `?status=&kind=&q=&sort=` | 200 `{user,items,stats}` |
 | PATCH `/profile` | session | `{displayName?,listVisibility?}` | 200 `{user}` |
+| GET `/recommendations` | session | — | 200 `{incoming,outgoing}` (pending only) |
+| POST `/recommendations` | session | `recommendationCreateSchema` | 201 `{sent,skipped}` |
+| PATCH `/recommendations/:id` | session, addressee | `{action:'accept'|'decline'}` | 200 `{action}` |
+| DELETE `/recommendations/:id` | session, sender | — | 200 `{ok}` |
 | GET `/tmdb-image/:size/:file` | none | — | 200 image bytes, immutable cache |
 
 POST `/entries` carries EXACTLY ONE of `titleId` | `tmdb` | `custom` (enforced by `entryUpsertSchema.refine`).
 
 POST `/friends/requests` auto-accepts when the target already has a pending request to the caller; response `state` distinguishes the two outcomes.
 
+POST `/recommendations` identifies the title the same three ways as POST `/entries` (`titleId` | `tmdb` | `custom`). Non-friends in `usernames` come back in `skipped` rather than failing the call, so one stale handle does not lose the rest.
+
 ## HARD CONSTRAINTS
 
+- **Writing into another user's library is only ever indirect.** A recommendation is an offer; `respondToRecommendation` is the single place that creates an entry for someone else, and only for the addressee themselves. Never add an endpoint that inserts into `entries` for a `user_id` other than the caller's.
+- **Accepting a recommendation must NOT overwrite an existing entry.** The addressee may already have the title watched and rated; the insert uses `onConflictDoNothing` on `(user_id, title_id)`. `POST /api/entries` upserts by design — do not reuse it for accept.
+- **Every modal goes through `src/components/Modal.tsx`.** It portals to `<body>`, which is required, not stylistic: see the `backdrop-filter` containing-block trap below.
 - **No interactive transactions.** `drizzle-orm/neon-http` does not support them. Keep each write to one statement (`onConflictDoUpdate`). Where two writes are unavoidable (custom title + entry) an orphan catalog row is possible; `deleteTitleIfOrphaned()` cleans it up on entry delete.
 - **`cookies()` and `headers()` are async** — always `await`. Cookies can be MUTATED only in Route Handlers and Server Actions, never in Server Components. `createSession` / `destroySession` therefore run only from `/api/auth/*`.
 - **Dynamic route params are Promises**: `{ params }: { params: Promise<{ id: string }> }`, then `await context.params`.

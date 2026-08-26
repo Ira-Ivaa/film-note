@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 
+import { AddTitleDialog } from '@/components/AddTitleDialog';
+import { Modal } from '@/components/Modal';
 import { RatingInput } from '@/components/RatingInput';
 import { Alert, Button, Field, Poster, Spinner } from '@/components/ui';
 import { api, errorMessage } from '@/lib/client';
@@ -44,29 +45,9 @@ export function EntryEditor({
   const [pending, setPending] = useState<'save' | 'delete' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  /*
-   * The dialog is portalled to <body>, so it needs a mount flag: `document`
-   * does not exist while this renders on the server.
-   */
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose();
-    }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
-
-  // The page behind a modal must not scroll away under it.
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, []);
+  /** Opens the recommend dialog over this one. */
+  const [sharing, setSharing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function save() {
     setError(null);
@@ -105,26 +86,9 @@ export function EntryEditor({
     }
   }
 
-  if (!mounted) return null;
-
-  /*
-   * Portalled to <body> on purpose. `panel` and `glass` use backdrop-filter,
-   * and a filter effect makes an element a containing block for its
-   * position: fixed descendants — rendered in place, this dialog would be
-   * positioned against the panel and clipped inside it instead of covering the
-   * viewport.
-   */
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/85 p-4 backdrop-blur-md"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Редактирование: ${title.name}`}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="glass my-auto w-full max-w-2xl rounded-3xl p-5 sm:p-6">
+  return (
+    <Modal label={`Редактирование: ${title.name}`} onClose={onClose}>
+      <div>
         <div className="flex gap-4">
           <Poster
             url={title.posterUrl}
@@ -229,13 +193,21 @@ export function EntryEditor({
             <Alert>{error}</Alert>
           </div>
         ) : null}
+        {notice ? (
+          <div className="mt-4">
+            <Alert tone="info">{notice}</Alert>
+          </div>
+        ) : null}
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <Button onClick={save} disabled={pending !== null}>
             {pending === 'save' ? <Spinner /> : null}
             Сохранить
           </Button>
-          <Button variant="outline" onClick={onClose} disabled={pending !== null}>
+          <Button variant="outline" onClick={() => setSharing(true)} disabled={pending !== null}>
+            ♥ Посоветовать другу
+          </Button>
+          <Button variant="ghost" onClick={onClose} disabled={pending !== null}>
             Отмена
           </Button>
           <Button
@@ -249,7 +221,23 @@ export function EntryEditor({
           </Button>
         </div>
       </div>
-    </div>,
-    document.body,
+
+      {sharing ? (
+        <AddTitleDialog
+          preview={{
+            name: title.name,
+            posterUrl: title.posterUrl,
+            kind: title.kind,
+            year: title.year,
+            overview: title.overview,
+          }}
+          target={{ titleId: title.id }}
+          // Already in this library, so the dialog is recommend-only.
+          allowSelf={false}
+          onDone={setNotice}
+          onClose={() => setSharing(false)}
+        />
+      ) : null}
+    </Modal>
   );
 }

@@ -73,6 +73,15 @@ export function TitleCard({ item, onOpen }: { item: LibraryItem; onOpen?: () => 
         >
           {meta}
         </span>
+        {entry.suggestedBy ? (
+          <span
+            className="mt-1 translate-y-2 text-[0.68rem] text-accent-lift transition-transform
+              duration-300 group-hover:translate-y-0 group-focus-visible:translate-y-0
+              touch:translate-y-0"
+          >
+            ♦ советует @{entry.suggestedBy.username}
+          </span>
+        ) : null}
         {title.overview ? (
           <span
             className="mt-1.5 line-clamp-4 translate-y-2 text-xs leading-snug text-fg-dim

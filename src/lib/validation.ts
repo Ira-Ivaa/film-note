@@ -125,6 +125,30 @@ export const profileUpdateSchema = z.object({
   message: 'No fields to update',
 });
 
+/* ------------------------------------------------------- recommendations --- */
+
+/**
+ * Suggest one title to one or more friends. The title is identified the same
+ * three ways as an entry, so a search result can be recommended before it
+ * exists in the local catalog.
+ */
+export const recommendationCreateSchema = z
+  .object({
+    /** Friend handles; the server verifies each friendship before writing. */
+    usernames: z.array(usernameSchema).min(1, 'Pick at least one friend').max(20),
+    note: z.string().trim().max(500).optional(),
+    titleId: z.string().uuid().optional(),
+    tmdb: tmdbRefSchema.optional(),
+    custom: customTitleSchema.optional(),
+  })
+  .refine((v) => [v.titleId, v.tmdb, v.custom].filter(Boolean).length === 1, {
+    message: 'Provide exactly one of titleId, tmdb, custom',
+  });
+
+export const recommendationRespondSchema = z.object({
+  action: z.enum(['accept', 'decline']),
+});
+
 /* ---------------------------------------------------------------- types --- */
 
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -134,3 +158,4 @@ export type TmdbRefInput = z.infer<typeof tmdbRefSchema>;
 export type EntryUpsertInput = z.infer<typeof entryUpsertSchema>;
 export type EntryPatchInput = z.infer<typeof entryPatchSchema>;
 export type LibraryQuery = z.infer<typeof libraryQuerySchema>;
+export type RecommendationCreateInput = z.infer<typeof recommendationCreateSchema>;

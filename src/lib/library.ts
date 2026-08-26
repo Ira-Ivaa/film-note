@@ -1,7 +1,8 @@
 import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 import { db } from '@/db';
-import { entries, titles } from '@/db/schema';
+import { entries, titles, users } from '@/db/schema';
 import { createCustomTitle, importTmdbTitle } from '@/lib/titles';
 import { TmdbError } from '@/lib/tmdb';
 import type { Entry, EntryStatus, Title, TitleKind } from '@/db/schema';
@@ -20,6 +21,8 @@ export type LibraryItem = {
     finishedAt: string | null;
     createdAt: string;
     updatedAt: string;
+    /** Set when this entry came from accepting someone's recommendation. */
+    suggestedBy: { username: string; displayName: string } | null;
   };
   title: {
     id: string;
@@ -35,6 +38,9 @@ export type LibraryItem = {
     countries: string[];
   };
 };
+
+/** Self-join alias: the friend whose suggestion created the entry. */
+const suggester = alias(users, 'suggester');
 
 const SELECTION = {
   entryId: entries.id,
@@ -58,6 +64,8 @@ const SELECTION = {
   overview: titles.overview,
   posterUrl: titles.posterUrl,
   countries: titles.countries,
+  suggestedByUsername: suggester.username,
+  suggestedByDisplayName: suggester.displayName,
 };
 
 /** Flat shape returned by SELECTION; kept explicit so `toItem` is checked. */
@@ -83,6 +91,8 @@ type Row = {
   overview: string | null;
   posterUrl: string | null;
   countries: string[];
+  suggestedByUsername: string | null;
+  suggestedByDisplayName: string | null;
 };
 
 function toItem(row: Row): LibraryItem {
@@ -98,6 +108,10 @@ function toItem(row: Row): LibraryItem {
       finishedAt: row.finishedAt,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
+      suggestedBy:
+        row.suggestedByUsername && row.suggestedByDisplayName
+          ? { username: row.suggestedByUsername, displayName: row.suggestedByDisplayName }
+          : null,
     },
     title: {
       id: row.titleId,
@@ -143,6 +157,7 @@ export async function listLibrary(
     .select(SELECTION)
     .from(entries)
     .innerJoin(titles, eq(titles.id, entries.titleId))
+    .leftJoin(suggester, eq(suggester.id, entries.suggestedByUserId))
     .where(and(...conditions))
     .orderBy(orderBy)
     .limit(500);
@@ -159,6 +174,7 @@ export async function getLibraryItem(
     .select(SELECTION)
     .from(entries)
     .innerJoin(titles, eq(titles.id, entries.titleId))
+    .leftJoin(suggester, eq(suggester.id, entries.suggestedByUserId))
     .where(and(eq(entries.userId, userId), eq(entries.id, entryId)))
     .limit(1);
 

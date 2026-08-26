@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 
+import { AddTitleDialog } from '@/components/AddTitleDialog';
 import { CustomTitleForm } from '@/components/CustomTitleForm';
 import { Alert, Badge, Button, EmptyState, Poster, Spinner } from '@/components/ui';
 import { api, errorMessage } from '@/lib/client';
-import { KIND_LABELS, STATUS_LABELS, STATUS_ORDER } from '@/lib/labels';
-import type { EntryStatus } from '@/db/schema';
+import { KIND_LABELS } from '@/lib/labels';
 import type { LibraryItem } from '@/lib/library';
 import type { SearchResponse, SearchResult } from '@/lib/search';
 
@@ -21,13 +21,15 @@ function ownershipKeys(result: Pick<SearchResult, 'titleId' | 'tmdbId' | 'tmdbTy
 export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[] | null>(null);
-  const [meta, setMeta] = useState<{ tmdbEnabled: boolean; tmdbUnavailable: boolean } | null>(null);
+  const [meta, setMeta] = useState<{ tmdbEnabled: boolean; tmdbUnavailable: boolean } | null>(
+    null,
+  );
 
   const [owned, setOwned] = useState(() => new Set(ownedKeys));
-  const [addStatus, setAddStatus] = useState<EntryStatus>('planned');
+  /** The result whose add dialog is open. */
+  const [adding, setAdding] = useState<SearchResult | null>(null);
 
   const [searching, setSearching] = useState(false);
-  const [addingKey, setAddingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
@@ -56,63 +58,18 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
     }
   }
 
-  async function add(result: SearchResult) {
-    setError(null);
-    setNotice(null);
-    setAddingKey(result.key);
-
-    try {
-      const payload = result.titleId
-        ? { titleId: result.titleId, status: addStatus }
-        : {
-            tmdb: { tmdbId: result.tmdbId, tmdbType: result.tmdbType, kind: result.kind },
-            status: addStatus,
-          };
-
-      const response = await api<{ item: LibraryItem }>('/api/entries', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-
-      setOwned((current) => {
-        const next = new Set(current);
-        for (const key of ownershipKeys(result)) next.add(key);
-        next.add(`title:${response.item.title.id}`);
-        return next;
-      });
-      setNotice(`«${response.item.title.name}» добавлено: ${STATUS_LABELS[addStatus]}`);
-    } catch (caught) {
-      setError(errorMessage(caught));
-    } finally {
-      setAddingKey(null);
-    }
-  }
-
   return (
     <div className="panel space-y-5 p-4 sm:p-5">
       <form onSubmit={search} className="flex flex-wrap items-end gap-2">
-        <div className="min-w-56 flex-1">
+        <div className="min-w-52 flex-1">
           <input
-            className="input-base"
+            className="input-base input-base-hover"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Название фильма, сериала или дорамы"
             aria-label="Поисковый запрос"
           />
         </div>
-
-        <select
-          className="input-base max-w-52"
-          value={addStatus}
-          onChange={(event) => setAddStatus(event.target.value as EntryStatus)}
-          aria-label="Статус для добавления"
-        >
-          {STATUS_ORDER.map((value) => (
-            <option key={value} value={value}>
-              Добавлять как: {STATUS_LABELS[value]}
-            </option>
-          ))}
-        </select>
 
         <Button type="submit" disabled={searching || query.trim().length === 0}>
           {searching ? <Spinner /> : null}
@@ -125,8 +82,8 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
 
       {meta && !meta.tmdbEnabled ? (
         <Alert tone="info">
-          Ключ TMDB не настроен на сервере — доступен только поиск по уже добавленным
-          названиям. Добавляйте новые вручную.
+          Ключ TMDB не настроен на сервере — доступен только поиск по уже добавленным названиям.
+          Добавляйте новые вручную.
         </Alert>
       ) : null}
       {meta?.tmdbUnavailable ? (
@@ -155,23 +112,25 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
           {results.map((result) => {
             const isOwned = ownershipKeys(result).some((key) => owned.has(key));
             return (
-              <li key={result.key} className="flex gap-4 rounded-3xl border border-fg/9 bg-surface/58 p-3.5 backdrop-blur-lg transition hover:border-accent/40">
+              <li
+                key={result.key}
+                className="flex gap-4 rounded-3xl border border-fg/9 bg-surface/58 p-3.5
+                  backdrop-blur-lg transition hover:border-accent/40 max-sm:gap-3 max-sm:p-3"
+              >
                 <Poster
                   url={result.posterUrl}
                   name={result.name}
-                  className="aspect-2/3 w-20 shrink-0 rounded-xl shadow-lg shadow-black/60"
+                  className="aspect-2/3 w-20 shrink-0 rounded-xl shadow-lg shadow-black/60
+                    max-sm:w-14"
                 />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{result.name}</p>
-                    <Badge className="border-line bg-surface-3 text-muted">
-                      {KIND_LABELS[result.kind]}
-                    </Badge>
-                    {result.year ? <span className="text-sm text-muted">{result.year}</span> : null}
-                    {result.titleId === null ? null : (
-                      <Badge className="border-line bg-surface-3 text-muted">в каталоге</Badge>
-                    )}
+                    <Badge className="bg-fg/8 text-muted">{KIND_LABELS[result.kind]}</Badge>
+                    {result.year ? (
+                      <span className="text-sm text-muted">{result.year}</span>
+                    ) : null}
                   </div>
 
                   {result.originalName && result.originalName !== result.name ? (
@@ -179,22 +138,17 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
                   ) : null}
 
                   {result.overview ? (
-                    <p className="mt-1.5 line-clamp-3 text-sm text-muted">{result.overview}</p>
+                    <p className="mt-1.5 line-clamp-3 text-sm text-muted max-sm:line-clamp-2">
+                      {result.overview}
+                    </p>
                   ) : null}
                 </div>
 
                 <div className="shrink-0 self-center">
                   {isOwned ? (
-                    <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-300">
-                      В списке
-                    </Badge>
+                    <Badge className="bg-accent/18 text-accent-lift">В списке</Badge>
                   ) : (
-                    <Button
-                      size="sm"
-                      disabled={addingKey !== null}
-                      onClick={() => void add(result)}
-                    >
-                      {addingKey === result.key ? <Spinner /> : null}
+                    <Button size="sm" onClick={() => setAdding(result)}>
                       Добавить
                     </Button>
                   )}
@@ -204,6 +158,41 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
           })}
         </ul>
       )}
+
+      {adding ? (
+        <AddTitleDialog
+          preview={{
+            name: adding.name,
+            posterUrl: adding.posterUrl,
+            kind: adding.kind,
+            year: adding.year,
+            overview: adding.overview,
+          }}
+          // An existing catalog row is referenced by id; a fresh TMDB hit is
+          // imported by the server on submit.
+          target={
+            adding.titleId
+              ? { titleId: adding.titleId }
+              : {
+                  tmdb: {
+                    tmdbId: adding.tmdbId as number,
+                    tmdbType: adding.tmdbType as 'movie' | 'tv',
+                    kind: adding.kind,
+                  },
+                }
+          }
+          onAdded={(item) => {
+            setOwned((current) => {
+              const next = new Set(current);
+              for (const key of ownershipKeys(adding)) next.add(key);
+              next.add(`title:${item.title.id}`);
+              return next;
+            });
+          }}
+          onDone={setNotice}
+          onClose={() => setAdding(null)}
+        />
+      ) : null}
     </div>
   );
 }

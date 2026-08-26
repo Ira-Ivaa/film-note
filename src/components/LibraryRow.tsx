@@ -54,6 +54,12 @@ export function LibraryRow({ item, onOpen }: { item: LibraryItem; onOpen?: () =>
           ) : null}
         </span>
 
+        {entry.suggestedBy ? (
+          <span className="mt-1.5 block text-xs text-accent-lift">
+            ♦ советует @{entry.suggestedBy.username}
+          </span>
+        ) : null}
+
         {(entry.review ?? title.overview) ? (
           <span
             className="mt-2 block line-clamp-3 max-w-[62ch] text-sm leading-relaxed text-fg-dim

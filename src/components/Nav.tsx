@@ -8,7 +8,7 @@ const LINKS = [
   { href: '/library', label: 'Библиотека' },
   { href: '/search', label: 'Поиск' },
   { href: '/friends', label: 'Друзья' },
-];
+] as const;
 
 /**
  * Floating glass pill. Stays a Server Component — active-link highlighting
@@ -19,7 +19,14 @@ const LINKS = [
  * bars on a short screen eat the content, and these links will not wrap into
  * anything readable.
  */
-export function Nav({ user }: { user: SessionUser }) {
+export function Nav({
+  user,
+  pendingCount = 0,
+}: {
+  user: SessionUser;
+  /** Suggestions waiting for an answer; without this badge nobody finds them. */
+  pendingCount?: number;
+}) {
   return (
     <div className="mx-auto max-w-7xl px-3 pt-3 sm:px-5 sm:pt-5">
       <nav
@@ -41,6 +48,14 @@ export function Nav({ user }: { user: SessionUser }) {
               hover:bg-fg/8 hover:text-fg"
           >
             {link.label}
+            {link.href === '/friends' && pendingCount > 0 ? (
+              <span
+                className="ml-1.5 inline-flex min-w-4.5 items-center justify-center rounded-full
+                  bg-accent px-1 text-[0.65rem] font-semibold text-accent-fg"
+              >
+                {pendingCount}
+              </span>
+            ) : null}
           </Link>
         ))}
 

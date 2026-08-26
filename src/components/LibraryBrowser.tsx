@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { AddTitleDialog } from '@/components/AddTitleDialog';
 import { EntryEditor } from '@/components/EntryEditor';
 import { LibraryRow } from '@/components/LibraryRow';
 import { TitleCard } from '@/components/TitleCard';
-import { EmptyState } from '@/components/ui';
+import { Alert, EmptyState } from '@/components/ui';
 import {
   KIND_LABELS,
   KIND_ORDER,
@@ -31,9 +32,17 @@ const COLLATOR = new Intl.Collator('ru');
 export function LibraryBrowser({
   items: initialItems,
   readOnly = false,
+  ownedTitleIds = [],
 }: {
   items: LibraryItem[];
   readOnly?: boolean;
+  /**
+   * Titles the *viewer* already has, used only in readOnly mode. Without it a
+   * tile tapped in a friend's library would offer "add to my list" for
+   * something already rated and watched — and POST /api/entries upserts, so
+   * that would reset it to planned.
+   */
+  ownedTitleIds?: string[];
 }) {
   const [items, setItems] = useState(initialItems);
   const [status, setStatus] = useState<EntryStatus | 'all'>('all');
@@ -41,6 +50,10 @@ export function LibraryBrowser({
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('added');
   const [editingId, setEditingId] = useState<string | null>(null);
+  /** In readOnly mode a tile opens this instead of the editor. */
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const owned = useMemo(() => new Set(ownedTitleIds), [ownedTitleIds]);
 
   // Starts at the default and adopts the stored value after mount: reading
   // localStorage during render would make the server and client markup differ.
@@ -88,6 +101,11 @@ export function LibraryBrowser({
   }, [items, status, kind, query, sort]);
 
   const editing = editingId ? items.find((item) => item.entry.id === editingId) : undefined;
+  const adding = addingId ? items.find((item) => item.entry.id === addingId) : undefined;
+
+  /** Own library: open the editor. Someone else's: offer to add or pass on. */
+  const openItem = (item: LibraryItem) => () =>
+    readOnly ? setAddingId(item.entry.id) : setEditingId(item.entry.id);
   const chip =
     'shrink-0 rounded-full px-3.5 py-1.5 text-sm transition hover:-translate-y-px hover:text-fg';
 
@@ -203,10 +221,7 @@ export function LibraryBrowser({
           >
             {visible.map((item) => (
               <li key={item.entry.id} className="contents">
-                <TitleCard
-                  item={item}
-                  onOpen={readOnly ? undefined : () => setEditingId(item.entry.id)}
-                />
+                <TitleCard item={item} onOpen={openItem(item)} />
               </li>
             ))}
           </ul>
@@ -214,15 +229,34 @@ export function LibraryBrowser({
           <ul className="grid gap-3">
             {visible.map((item) => (
               <li key={item.entry.id} className="contents">
-                <LibraryRow
-                  item={item}
-                  onOpen={readOnly ? undefined : () => setEditingId(item.entry.id)}
-                />
+                <LibraryRow item={item} onOpen={openItem(item)} />
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {notice ? (
+        <div className="mt-4">
+          <Alert tone="info">{notice}</Alert>
+        </div>
+      ) : null}
+
+      {adding ? (
+        <AddTitleDialog
+          preview={{
+            name: adding.title.name,
+            posterUrl: adding.title.posterUrl,
+            kind: adding.title.kind,
+            year: adding.title.year,
+            overview: adding.title.overview,
+          }}
+          target={{ titleId: adding.title.id }}
+          allowSelf={!owned.has(adding.title.id)}
+          onDone={setNotice}
+          onClose={() => setAddingId(null)}
+        />
+      ) : null}
 
       {editing ? (
         <EntryEditor

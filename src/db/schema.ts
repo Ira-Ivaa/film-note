@@ -47,6 +47,13 @@ export const friendshipStatusEnum = pgEnum('friendship_status', [
   'declined',
 ]);
 
+/** Lifecycle of one suggested title. */
+export const recommendationStatusEnum = pgEnum('recommendation_status', [
+  'pending',
+  'accepted',
+  'declined',
+]);
+
 /* ---------------------------------------------------------------- users --- */
 
 export const users = pgTable(
@@ -158,6 +165,15 @@ export const entries = pgTable(
     progress: text('progress'),
     startedAt: date('started_at'),
     finishedAt: date('finished_at'),
+    /**
+     * Who suggested this title, when the entry was created by accepting a
+     * recommendation. Denormalised on purpose: it is a fact about how the entry
+     * came to be, and keeping it here spares every library read a join through
+     * the recommendations table. Null once that account is deleted.
+     */
+    suggestedByUserId: uuid('suggested_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -195,6 +211,42 @@ export const friendships = pgTable(
   ],
 );
 
+/* ------------------------------------------------------- recommendations --- */
+
+/**
+ * One user suggesting one title to another. Directed and explicit: nothing is
+ * written into the addressee's library until they accept, which is what keeps a
+ * friend from filling your list uninvited.
+ *
+ * Unique per (from, to, title) so re-sending the same suggestion updates the
+ * existing row instead of stacking duplicates.
+ */
+export const recommendations = pgTable(
+  'recommendations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    fromUserId: uuid('from_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    toUserId: uuid('to_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    titleId: uuid('title_id')
+      .notNull()
+      .references(() => titles.id, { onDelete: 'cascade' }),
+    /** Optional "why you should watch this" from the sender. */
+    note: text('note'),
+    status: recommendationStatusEnum('status').notNull().default('pending'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('recommendations_triple_uq').on(t.fromUserId, t.toUserId, t.titleId),
+    index('recommendations_inbox_idx').on(t.toUserId, t.status),
+    check('recommendations_no_self_ck', sql`${t.fromUserId} <> ${t.toUserId}`),
+  ],
+);
+
 /* ------------------------------------------------------------ relations --- */
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -226,8 +278,10 @@ export type NewTitle = typeof titles.$inferInsert;
 export type Entry = typeof entries.$inferSelect;
 export type NewEntry = typeof entries.$inferInsert;
 export type Friendship = typeof friendships.$inferSelect;
+export type Recommendation = typeof recommendations.$inferSelect;
 
 export type TitleKind = (typeof titleKindEnum.enumValues)[number];
 export type EntryStatus = (typeof entryStatusEnum.enumValues)[number];
 export type ListVisibility = (typeof listVisibilityEnum.enumValues)[number];
 export type FriendshipStatus = (typeof friendshipStatusEnum.enumValues)[number];
+export type RecommendationStatus = (typeof recommendationStatusEnum.enumValues)[number];

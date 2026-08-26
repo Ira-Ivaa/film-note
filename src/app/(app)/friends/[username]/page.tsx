@@ -36,7 +36,11 @@ export default async function FriendLibraryPage({ params }: Props) {
     );
   }
 
-  const items = await listLibrary(target.id, { sort: 'added' });
+  const [items, mine] = await Promise.all([
+    listLibrary(target.id, { sort: 'added' }),
+    listLibrary(viewer.id, { sort: 'added' }),
+  ]);
+  const ownedTitleIds = mine.map((item) => item.title.id);
 
   return (
     <div className="space-y-6">
@@ -46,11 +50,11 @@ export default async function FriendLibraryPage({ params }: Props) {
         </Link>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight max-sm:text-2xl">{target.displayName}</h1>
         <p className="mt-1 text-sm text-muted">
-          @{target.username} · {items.length} в списке · только просмотр
+          @{target.username} · {items.length} в списке · нажмите на постер, чтобы добавить себе
         </p>
       </div>
 
-      <LibraryBrowser items={items} readOnly />
+      <LibraryBrowser items={items} readOnly ownedTitleIds={ownedTitleIds} />
     </div>
   );
 }
