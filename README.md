@@ -3,6 +3,12 @@
 Блокнот для фильмов, сериалов, дорам и аниме: список желаемого, оценки просмотренного и
 библиотеки друзей.
 
+![Моя библиотека](docs/screenshots/library.png)
+
+| Поиск по TMDB | Карточка тайтла | Друзья |
+| --- | --- | --- |
+| ![Поиск](docs/screenshots/search.png) | ![Карточка тайтла](docs/screenshots/editor.png) | ![Друзья](docs/screenshots/friends.png) |
+
 - **Фронт и бэк:** Next.js 16 (React 19) + TypeScript, один деплой на Vercel
 - **База:** Neon — serverless Postgres, бесплатный тариф
 - **Метаданные:** TMDB API (поиск по фильмам, сериалам, дорамам)
