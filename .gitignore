@@ -15,4 +15,7 @@ public/uploads/
 .DS_Store
 .vercel
 .idea/
-.vscode/
+# Shared editor setup is committed; personal VS Code files are not.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
