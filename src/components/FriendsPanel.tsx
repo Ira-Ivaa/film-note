@@ -79,7 +79,7 @@ export function FriendsPanel({
             className="input-base"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            placeholder="lev_note"
+            placeholder="friend_login"
             autoComplete="off"
             pattern="[A-Za-z0-9_]+"
             minLength={3}

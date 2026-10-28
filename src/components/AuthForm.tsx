@@ -94,7 +94,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                 autoComplete="name"
                 required
                 maxLength={64}
-                placeholder="Лев"
+                placeholder="name"
               />
             </Field>
             <Field label="Логин" hint="a-z, 0-9 и подчёркивание — по нему вас найдут друзья">
@@ -107,7 +107,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                 minLength={3}
                 maxLength={32}
                 pattern="[A-Za-z0-9_]+"
-                placeholder="lev_note"
+                placeholder="movie_fan"
               />
             </Field>
           </>
