@@ -210,12 +210,7 @@ export function EntryEditor({
           <Button variant="ghost" onClick={onClose} disabled={pending !== null}>
             Отмена
           </Button>
-          <Button
-            variant="danger"
-            className="ml-auto"
-            onClick={remove}
-            disabled={pending !== null}
-          >
+          <Button variant="danger" className="ml-auto" onClick={remove} disabled={pending !== null}>
             {pending === 'delete' ? <Spinner /> : null}
             Удалить из списка
           </Button>

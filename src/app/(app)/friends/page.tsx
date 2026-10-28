@@ -2,10 +2,7 @@ import { FriendsPanel } from '@/components/FriendsPanel';
 import { RecommendationsPanel } from '@/components/RecommendationsPanel';
 import { requireUser } from '@/lib/auth';
 import { listFriends, listIncomingRequests, listOutgoingRequests } from '@/lib/friends';
-import {
-  listIncomingRecommendations,
-  listOutgoingRecommendations,
-} from '@/lib/recommendations';
+import { listIncomingRecommendations, listOutgoingRecommendations } from '@/lib/recommendations';
 
 export const metadata = { title: 'Друзья — Film Note' };
 

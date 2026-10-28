@@ -128,8 +128,7 @@ function genreIdsOf(raw: RawResult): number[] {
  */
 export function deriveKind(raw: RawResult, mediaType: TmdbMediaType): TitleKind {
   const countries = countriesOf(raw);
-  const isJapanese =
-    countries.includes('JP') || raw.original_language === 'ja';
+  const isJapanese = countries.includes('JP') || raw.original_language === 'ja';
 
   if (genreIdsOf(raw).includes(ANIMATION_GENRE_ID)) {
     return isJapanese ? 'anime' : 'cartoon';

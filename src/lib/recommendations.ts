@@ -82,9 +82,7 @@ function toItem(row: Row): RecommendationItem {
 /* ---------------------------------------------------------------- reads --- */
 
 /** Suggestions waiting for this user's answer. */
-export async function listIncomingRecommendations(
-  userId: string,
-): Promise<RecommendationItem[]> {
+export async function listIncomingRecommendations(userId: string): Promise<RecommendationItem[]> {
   const rows = await db
     .select(SELECTION)
     .from(recommendations)
@@ -96,9 +94,7 @@ export async function listIncomingRecommendations(
 }
 
 /** Suggestions this user sent that are still unanswered. */
-export async function listOutgoingRecommendations(
-  userId: string,
-): Promise<RecommendationItem[]> {
+export async function listOutgoingRecommendations(userId: string): Promise<RecommendationItem[]> {
   const rows = await db
     .select(SELECTION)
     .from(recommendations)
@@ -218,8 +214,7 @@ export async function sendRecommendations(
 }
 
 export type RespondOutcome =
-  | { ok: true; action: 'accepted' | 'declined' }
-  | { ok: false; reason: 'not_found' };
+  { ok: true; action: 'accepted' | 'declined' } | { ok: false; reason: 'not_found' };
 
 /**
  * Accepts or declines one suggestion addressed to this user.
@@ -238,7 +233,11 @@ export async function respondToRecommendation(
   action: 'accept' | 'decline',
 ): Promise<RespondOutcome> {
   const rows = await db
-    .select({ id: recommendations.id, titleId: recommendations.titleId, fromUserId: recommendations.fromUserId })
+    .select({
+      id: recommendations.id,
+      titleId: recommendations.titleId,
+      fromUserId: recommendations.fromUserId,
+    })
     .from(recommendations)
     .where(
       and(

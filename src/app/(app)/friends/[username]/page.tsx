@@ -29,8 +29,8 @@ export default async function FriendLibraryPage({ params }: Props) {
           ← К друзьям
         </Link>
         <EmptyState title="Список закрыт">
-          {target.displayName} не открывает свою библиотеку. Отправьте заявку в друзья или
-          попросите изменить настройку доступа.
+          {target.displayName} не открывает свою библиотеку. Отправьте заявку в друзья или попросите
+          изменить настройку доступа.
         </EmptyState>
       </div>
     );
@@ -48,7 +48,9 @@ export default async function FriendLibraryPage({ params }: Props) {
         <Link href="/friends" className="text-sm text-muted hover:text-fg">
           ← К друзьям
         </Link>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight max-sm:text-2xl">{target.displayName}</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight max-sm:text-2xl">
+          {target.displayName}
+        </h1>
         <p className="mt-1 text-sm text-muted">
           @{target.username} · {items.length} в списке · нажмите на постер, чтобы добавить себе
         </p>

@@ -91,14 +91,15 @@ const entryFieldsSchema = z.object({
  * Create-or-update. Exactly one of `titleId` / `tmdb` / `custom` identifies the
  * title: an existing catalog row, a TMDB result to import, or a hand-written one.
  */
-export const entryUpsertSchema = entryFieldsSchema.extend({
-  titleId: z.string().uuid().optional(),
-  tmdb: tmdbRefSchema.optional(),
-  custom: customTitleSchema.optional(),
-}).refine(
-  (v) => [v.titleId, v.tmdb, v.custom].filter(Boolean).length === 1,
-  { message: 'Provide exactly one of titleId, tmdb, custom' },
-);
+export const entryUpsertSchema = entryFieldsSchema
+  .extend({
+    titleId: z.string().uuid().optional(),
+    tmdb: tmdbRefSchema.optional(),
+    custom: customTitleSchema.optional(),
+  })
+  .refine((v) => [v.titleId, v.tmdb, v.custom].filter(Boolean).length === 1, {
+    message: 'Provide exactly one of titleId, tmdb, custom',
+  });
 
 export const entryPatchSchema = entryFieldsSchema.refine(
   (v) => Object.values(v).some((value) => value !== undefined),
@@ -118,12 +119,14 @@ export const friendRequestSchema = z.object({ username: usernameSchema });
 
 export const friendRespondSchema = z.object({ action: z.enum(['accept', 'decline']) });
 
-export const profileUpdateSchema = z.object({
-  displayName: z.string().trim().min(1).max(64).optional(),
-  listVisibility: visibilitySchema.optional(),
-}).refine((v) => Object.values(v).some((value) => value !== undefined), {
-  message: 'No fields to update',
-});
+export const profileUpdateSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(64).optional(),
+    listVisibility: visibilitySchema.optional(),
+  })
+  .refine((v) => Object.values(v).some((value) => value !== undefined), {
+    message: 'No fields to update',
+  });
 
 /* ------------------------------------------------------- recommendations --- */
 

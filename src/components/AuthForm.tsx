@@ -68,9 +68,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   return (
     <div className="card w-full max-w-sm p-6 sm:p-7">
       <h1 className="text-xl font-semibold">{copy.title}</h1>
-      <p className="mt-1 text-sm text-muted">
-        Блокнот для фильмов, сериалов, дорам и аниме.
-      </p>
+      <p className="mt-1 text-sm text-muted">Блокнот для фильмов, сериалов, дорам и аниме.</p>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <Field label="Email">

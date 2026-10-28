@@ -137,9 +137,7 @@ export function RecommendationsPanel({
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{rec.title.name}</p>
-                  <p className="text-xs text-muted">
-                    @{rec.user.username} · ждёт ответа
-                  </p>
+                  <p className="text-xs text-muted">@{rec.user.username} · ждёт ответа</p>
                 </div>
                 <Button
                   size="sm"

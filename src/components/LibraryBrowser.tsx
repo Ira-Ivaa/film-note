@@ -7,13 +7,7 @@ import { EntryEditor } from '@/components/EntryEditor';
 import { LibraryRow } from '@/components/LibraryRow';
 import { TitleCard } from '@/components/TitleCard';
 import { Alert, EmptyState } from '@/components/ui';
-import {
-  KIND_LABELS,
-  KIND_ORDER,
-  SORT_LABELS,
-  STATUS_ORDER,
-  STATUS_SHORT,
-} from '@/lib/labels';
+import { KIND_LABELS, KIND_ORDER, SORT_LABELS, STATUS_ORDER, STATUS_SHORT } from '@/lib/labels';
 import { DEFAULT_DENSITY, DENSITY_KEY, readDensity, store } from '@/lib/theme';
 import type { EntryStatus, TitleKind } from '@/db/schema';
 import type { LibraryItem } from '@/lib/library';
@@ -195,9 +189,7 @@ export function LibraryBrowser({
                 aria-pressed={density === option.value}
                 onClick={() => changeDensity(option.value)}
                 className={`rounded-full px-2.5 py-1 text-sm transition ${
-                  density === option.value
-                    ? 'bg-accent text-accent-fg'
-                    : 'text-muted hover:text-fg'
+                  density === option.value ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'
                 }`}
               >
                 {option.label}

@@ -22,8 +22,8 @@ export default async function SearchPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Поиск</h1>
         <p className="mt-1 text-sm text-muted">
-          Ищите по базе TMDB — фильмы, сериалы, дорамы и аниме. Чего там нет, добавьте вручную
-          с фотографией постера.
+          Ищите по базе TMDB — фильмы, сериалы, дорамы и аниме. Чего там нет, добавьте вручную с
+          фотографией постера.
         </p>
       </div>
 

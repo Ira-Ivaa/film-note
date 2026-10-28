@@ -13,10 +13,7 @@ export async function getTitle(id: string): Promise<Title | null> {
   return rows[0] ?? null;
 }
 
-async function findTmdbTitle(
-  tmdbType: TmdbMediaType,
-  tmdbId: number,
-): Promise<Title | null> {
+async function findTmdbTitle(tmdbType: TmdbMediaType, tmdbId: number): Promise<Title | null> {
   const rows = await db
     .select()
     .from(titles)

@@ -20,16 +20,12 @@ export async function PATCH(request: Request) {
       patch.listVisibility = parsed.data.listVisibility;
     }
 
-    const updated = await db
-      .update(users)
-      .set(patch)
-      .where(eq(users.id, auth.user.id))
-      .returning({
-        id: users.id,
-        username: users.username,
-        displayName: users.displayName,
-        listVisibility: users.listVisibility,
-      });
+    const updated = await db.update(users).set(patch).where(eq(users.id, auth.user.id)).returning({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      listVisibility: users.listVisibility,
+    });
 
     const user = updated[0];
     return user ? ok({ user }) : fail('not_found', 'User not found');

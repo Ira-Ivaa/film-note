@@ -34,11 +34,7 @@ export function ok<T>(data: T, status = 200): NextResponse {
 }
 
 /** Uniform error envelope: `{ error: { code, message, details? } }`. */
-export function fail(
-  code: ApiErrorCode,
-  message: string,
-  details?: unknown,
-): NextResponse {
+export function fail(code: ApiErrorCode, message: string, details?: unknown): NextResponse {
   return NextResponse.json(
     { error: { code, message, ...(details === undefined ? {} : { details }) } },
     { status: STATUS[code] },

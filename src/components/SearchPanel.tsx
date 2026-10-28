@@ -21,9 +21,7 @@ function ownershipKeys(result: Pick<SearchResult, 'titleId' | 'tmdbId' | 'tmdbTy
 export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[] | null>(null);
-  const [meta, setMeta] = useState<{ tmdbEnabled: boolean; tmdbUnavailable: boolean } | null>(
-    null,
-  );
+  const [meta, setMeta] = useState<{ tmdbEnabled: boolean; tmdbUnavailable: boolean } | null>(null);
 
   const [owned, setOwned] = useState(() => new Set(ownedKeys));
   /** The result whose add dialog is open. */
@@ -128,9 +126,7 @@ export function SearchPanel({ ownedKeys }: { ownedKeys: string[] }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{result.name}</p>
                     <Badge className="bg-fg/8 text-muted">{KIND_LABELS[result.kind]}</Badge>
-                    {result.year ? (
-                      <span className="text-sm text-muted">{result.year}</span>
-                    ) : null}
+                    {result.year ? <span className="text-sm text-muted">{result.year}</span> : null}
                   </div>
 
                   {result.originalName && result.originalName !== result.name ? (

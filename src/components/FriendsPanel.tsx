@@ -111,12 +111,16 @@ export function FriendsPanel({
                   size="sm"
                   disabled={pendingId !== null}
                   onClick={() =>
-                    void run(request.id, async () => {
-                      await api(`/api/friends/requests/${request.id}`, {
-                        method: 'PATCH',
-                        body: JSON.stringify({ action: 'accept' }),
-                      });
-                    }, `@${request.user.username} добавлен в друзья`)
+                    void run(
+                      request.id,
+                      async () => {
+                        await api(`/api/friends/requests/${request.id}`, {
+                          method: 'PATCH',
+                          body: JSON.stringify({ action: 'accept' }),
+                        });
+                      },
+                      `@${request.user.username} добавлен в друзья`,
+                    )
                   }
                 >
                   {pendingId === request.id ? <Spinner /> : null}

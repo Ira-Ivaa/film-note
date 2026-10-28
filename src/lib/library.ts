@@ -132,10 +132,7 @@ function toItem(row: Row): LibraryItem {
 /* ---------------------------------------------------------------- reads --- */
 
 /** One user's library, filtered and sorted. */
-export async function listLibrary(
-  userId: string,
-  query: LibraryQuery,
-): Promise<LibraryItem[]> {
+export async function listLibrary(userId: string, query: LibraryQuery): Promise<LibraryItem[]> {
   const conditions = [eq(entries.userId, userId)];
   if (query.status) conditions.push(eq(entries.status, query.status));
   if (query.kind) conditions.push(eq(titles.kind, query.kind));
@@ -166,10 +163,7 @@ export async function listLibrary(
 }
 
 /** A single entry belonging to the given user. */
-export async function getLibraryItem(
-  userId: string,
-  entryId: string,
-): Promise<LibraryItem | null> {
+export async function getLibraryItem(userId: string, entryId: string): Promise<LibraryItem | null> {
   const rows = await db
     .select(SELECTION)
     .from(entries)
@@ -197,8 +191,7 @@ export async function libraryStats(
 /* --------------------------------------------------------------- writes --- */
 
 export type UpsertOutcome =
-  | { ok: true; item: LibraryItem }
-  | { ok: false; reason: 'title_not_found' | 'tmdb_unavailable' };
+  { ok: true; item: LibraryItem } | { ok: false; reason: 'title_not_found' | 'tmdb_unavailable' };
 
 /**
  * Resolves the target title (existing / TMDB import / hand-written) and then
@@ -208,10 +201,7 @@ export type UpsertOutcome =
  * therefore inserted before the entry; if the entry insert then fails the
  * catalog row is left behind and cleaned up by `deleteTitleIfOrphaned`.
  */
-export async function upsertEntry(
-  userId: string,
-  input: EntryUpsertInput,
-): Promise<UpsertOutcome> {
+export async function upsertEntry(userId: string, input: EntryUpsertInput): Promise<UpsertOutcome> {
   let title: Title | null = null;
 
   if (input.titleId) {
@@ -304,10 +294,7 @@ function autoFinishedAt(
 }
 
 /** Only keys present in the input are written, so PATCH stays partial. */
-function buildPatch(
-  input: EntryPatchInput | EntryUpsertInput,
-  now: Date,
-): Partial<Entry> {
+function buildPatch(input: EntryPatchInput | EntryUpsertInput, now: Date): Partial<Entry> {
   const patch: Partial<Entry> = { updatedAt: now };
   if (input.status !== undefined) patch.status = input.status;
   if (input.rating !== undefined) patch.rating = input.rating;

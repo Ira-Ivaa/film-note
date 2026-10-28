@@ -12,8 +12,7 @@ import type { LibraryItem } from '@/lib/library';
 
 /** The three ways a title can be identified, same as the entries API. */
 export type TitleTarget =
-  | { titleId: string }
-  | { tmdb: { tmdbId: number; tmdbType: 'movie' | 'tv'; kind?: TitleKind } };
+  { titleId: string } | { tmdb: { tmdbId: number; tmdbType: 'movie' | 'tv'; kind?: TitleKind } };
 
 export type TitlePreview = {
   name: string;
@@ -96,17 +95,14 @@ export function AddTitleDialog({
       }
 
       if (picked.length > 0) {
-        const response = await api<{ sent: string[]; skipped: string[] }>(
-          '/api/recommendations',
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              usernames: picked,
-              note: note.trim() || undefined,
-              ...target,
-            }),
-          },
-        );
+        const response = await api<{ sent: string[]; skipped: string[] }>('/api/recommendations', {
+          method: 'POST',
+          body: JSON.stringify({
+            usernames: picked,
+            note: note.trim() || undefined,
+            ...target,
+          }),
+        });
         if (response.sent.length > 0) {
           done.push(`совет отправлен: ${response.sent.map((n) => `@${n}`).join(', ')}`);
         }
@@ -185,8 +181,8 @@ export function AddTitleDialog({
         <div className="rounded-2xl border border-line bg-surface-2/60 p-3.5">
           <p className="text-sm font-medium">Посоветовать друзьям</p>
           <p className="mt-1 text-xs text-muted">
-            Друг увидит совет и сам решит, добавлять ли. В его список без подтверждения ничего
-            не попадёт.
+            Друг увидит совет и сам решит, добавлять ли. В его список без подтверждения ничего не
+            попадёт.
           </p>
 
           {friends === null ? (

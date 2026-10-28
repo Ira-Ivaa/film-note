@@ -57,5 +57,4 @@ export const env = {
 };
 
 /** True when TMDB search can be performed at all. */
-export const tmdbConfigured = (): boolean =>
-  Boolean(env.tmdbAccessToken ?? env.tmdbApiKey);
+export const tmdbConfigured = (): boolean => Boolean(env.tmdbAccessToken ?? env.tmdbApiKey);

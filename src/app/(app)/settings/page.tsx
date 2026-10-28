@@ -11,15 +11,12 @@ export default async function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Настройки</h1>
         <p className="mt-1 text-sm text-muted">
-          Ваш логин <span className="text-fg">@{user.username}</span> — по нему друзья
-          отправляют заявки. Email: {user.email}
+          Ваш логин <span className="text-fg">@{user.username}</span> — по нему друзья отправляют
+          заявки. Email: {user.email}
         </p>
       </div>
 
-      <ProfileForm
-        initialDisplayName={user.displayName}
-        initialVisibility={user.listVisibility}
-      />
+      <ProfileForm initialDisplayName={user.displayName} initialVisibility={user.listVisibility} />
     </div>
   );
 }

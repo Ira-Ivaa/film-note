@@ -123,7 +123,10 @@ export const titles = pgTable(
     /** Absolute URL: TMDB CDN, Vercel Blob, or /uploads/* in local dev. */
     posterUrl: text('poster_url'),
     /** ISO-3166-1 codes, used to tell doramas from western series. */
-    countries: text('countries').array().notNull().default(sql`'{}'::text[]`),
+    countries: text('countries')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     /** Set for source='custom'; null once the author deletes their account. */
     createdByUserId: uuid('created_by_user_id').references(() => users.id, {
       onDelete: 'set null',

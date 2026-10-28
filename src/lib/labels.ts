@@ -34,22 +34,9 @@ export const VISIBILITY_LABELS: Record<ListVisibility, string> = {
   public: 'Все',
 };
 
-export const STATUS_ORDER: EntryStatus[] = [
-  'planned',
-  'watching',
-  'on_hold',
-  'watched',
-  'dropped',
-];
+export const STATUS_ORDER: EntryStatus[] = ['planned', 'watching', 'on_hold', 'watched', 'dropped'];
 
-export const KIND_ORDER: TitleKind[] = [
-  'movie',
-  'series',
-  'dorama',
-  'anime',
-  'cartoon',
-  'other',
-];
+export const KIND_ORDER: TitleKind[] = ['movie', 'series', 'dorama', 'anime', 'cartoon', 'other'];
 
 /** Tailwind classes per status, used for badges. */
 export const STATUS_STYLES: Record<EntryStatus, string> = {
