@@ -12,51 +12,54 @@ Machine-readable project contract. Keep in sync with code when structure changes
 
 ## STACK
 
-| layer | choice | version | notes |
-| --- | --- | --- | --- |
-| framework | Next.js App Router | 16.3.2 | React Server Components + Route Handlers |
-| ui | React | 19.2.8 | |
-| language | TypeScript | 5.9.3 | `strict`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax` |
-| styles | Tailwind CSS | 4.3.3 | CSS-first config in `src/app/globals.css`, no `tailwind.config.js` |
-| font | Onest via `next/font/google` | — | self-hosted, latin + cyrillic subsets |
-| db | Neon serverless Postgres | — | free tier, autosuspends when idle |
-| db client | `@neondatabase/serverless` + `drizzle-orm/neon-http` | 1.1.0 / 0.45.2 | HTTP driver |
-| migrations | drizzle-kit | 0.31.10 | |
-| validation | zod | 4.4.3 | |
-| hashing | bcryptjs | 3.0.3 | pure JS, cost 12 |
-| blob storage | `@vercel/blob` | 2.8.0 | poster photos |
+| layer        | choice                                               | version        | notes                                                              |
+| ------------ | ---------------------------------------------------- | -------------- | ------------------------------------------------------------------ |
+| framework    | Next.js App Router                                   | 16.3.2         | React Server Components + Route Handlers                           |
+| ui           | React                                                | 19.2.8         |                                                                    |
+| language     | TypeScript                                           | 5.9.3          | `strict`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`       |
+| styles       | Tailwind CSS                                         | 4.3.3          | CSS-first config in `src/app/globals.css`, no `tailwind.config.js` |
+| font         | Onest via `next/font/google`                         | —              | self-hosted, latin + cyrillic subsets                              |
+| db           | Neon serverless Postgres                             | —              | free tier, autosuspends when idle                                  |
+| db client    | `@neondatabase/serverless` + `drizzle-orm/neon-http` | 1.1.0 / 0.45.2 | HTTP driver                                                        |
+| migrations   | drizzle-kit                                          | 0.31.10        |                                                                    |
+| validation   | zod                                                  | 4.4.3          |                                                                    |
+| hashing      | bcryptjs                                             | 3.0.3          | pure JS, cost 12                                                   |
+| blob storage | `@vercel/blob`                                       | 2.8.0          | poster photos                                                      |
+| formatter    | Prettier                                             | 3.9.10         | `.prettierrc`: single quotes, 100 columns                          |
 
-No ESLint config in this repo. `tsc --noEmit` plus `next build` are the only static gates.
+No ESLint config in this repo. `prettier --check`, `tsc --noEmit` and `next build` are the only static gates.
 
 ## COMMANDS
 
 ```
 npm install
 npm run dev          # localhost:3000
-npm run typecheck    # tsc --noEmit          <- gate 1
-npm run build        # next build            <- gate 2
+npm run format       # prettier --write .
+npm run format:check # prettier --check .    <- gate 1
+npm run typecheck    # tsc --noEmit          <- gate 2
+npm run build        # next build            <- gate 3
 npm run db:push      # sync schema to DB, no migration files (dev)
 npm run db:generate  # emit SQL migration into ./drizzle
 npm run db:migrate   # apply ./drizzle migrations
 npm run db:studio    # drizzle-kit studio
 ```
 
-Run BOTH gates after any change. Never claim completion without them.
+Run ALL gates after any change. Never claim completion without them.
 
 ## ENVIRONMENT
 
 Declared and validated only in `src/lib/env.ts`. Never read `process.env` elsewhere.
 
-| var | required | purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | yes | Neon pooled connection string |
-| `AUTH_SECRET` | yes | pepper for session-token SHA-256 |
-| `TMDB_ACCESS_TOKEN` | no | TMDB v4 read token (preferred) |
-| `TMDB_API_KEY` | no | TMDB v3 key, fallback when v4 token absent |
-| `TMDB_BASE_URL` | no | override TMDB API host (reverse proxy / mirror where TMDB is blocked) |
-| `TMDB_IMAGE_BASE` | no | override TMDB image host, same reason |
-| `STORAGE_DRIVER` | no | `local` (default) \| `vercel-blob` |
-| `BLOB_READ_WRITE_TOKEN` | prod | required when `STORAGE_DRIVER=vercel-blob` |
+| var                     | required | purpose                                                               |
+| ----------------------- | -------- | --------------------------------------------------------------------- |
+| `DATABASE_URL`          | yes      | Neon pooled connection string                                         |
+| `AUTH_SECRET`           | yes      | pepper for session-token SHA-256                                      |
+| `TMDB_ACCESS_TOKEN`     | no       | TMDB v4 read token (preferred)                                        |
+| `TMDB_API_KEY`          | no       | TMDB v3 key, fallback when v4 token absent                            |
+| `TMDB_BASE_URL`         | no       | override TMDB API host (reverse proxy / mirror where TMDB is blocked) |
+| `TMDB_IMAGE_BASE`       | no       | override TMDB image host, same reason                                 |
+| `STORAGE_DRIVER`        | no       | `local` (default) \| `vercel-blob`                                    |
+| `BLOB_READ_WRITE_TOKEN` | prod     | required when `STORAGE_DRIVER=vercel-blob`                            |
 
 Without TMDB credentials the app still works: search falls back to the local catalog only, and titles are added manually.
 
@@ -119,31 +122,31 @@ Invariants:
 
 All paths under `/api`. All non-listed methods return 405 from the framework.
 
-| method + path | auth | body / query | success |
-| --- | --- | --- | --- |
-| POST `/auth/register` | none | `{email,username,displayName,password}` | 201 `{user}` + cookie |
-| POST `/auth/login` | none | `{email,password}` | 200 `{user}` + cookie |
-| POST `/auth/logout` | none | — | 200 `{ok}` |
-| GET `/auth/me` | none | — | 200 `{user\|null}` |
-| GET `/titles/search` | session | `?q=&scope=all\|local` | 200 `{results,tmdbEnabled,tmdbUnavailable}` |
-| POST `/titles` | session | `customTitleSchema` | 201 `{title}` |
-| POST `/uploads/poster` | session | multipart, field `file` | 201 `{url}` |
-| GET `/entries` | session | `?status=&kind=&q=&sort=` | 200 `{items,stats}` |
-| POST `/entries` | session | `entryUpsertSchema` | 200 `{item}` |
-| GET `/entries/:id` | session, owner | — | 200 `{item}` |
-| PATCH `/entries/:id` | session, owner | `entryPatchSchema` | 200 `{item}` |
-| DELETE `/entries/:id` | session, owner | — | 200 `{ok}` |
-| GET `/friends` | session | — | 200 `{friends,incoming,outgoing}` |
-| POST `/friends/requests` | session | `{username}` | 201 `{state:'pending'\|'accepted'}` |
-| PATCH `/friends/requests/:id` | session, addressee | `{action:'accept'\|'decline'}` | 200 `{ok}` |
-| DELETE `/friends/requests/:id` | session, either party | — | 200 `{ok}` |
-| GET `/users/:username/library` | visibility-gated | `?status=&kind=&q=&sort=` | 200 `{user,items,stats}` |
-| PATCH `/profile` | session | `{displayName?,listVisibility?}` | 200 `{user}` |
-| GET `/recommendations` | session | — | 200 `{incoming,outgoing}` (pending only) |
-| POST `/recommendations` | session | `recommendationCreateSchema` | 201 `{sent,skipped}` |
-| PATCH `/recommendations/:id` | session, addressee | `{action:'accept'|'decline'}` | 200 `{action}` |
-| DELETE `/recommendations/:id` | session, sender | — | 200 `{ok}` |
-| GET `/tmdb-image/:size/:file` | none | — | 200 image bytes, immutable cache |
+| method + path                  | auth                  | body / query                            | success                                     |
+| ------------------------------ | --------------------- | --------------------------------------- | ------------------------------------------- |
+| POST `/auth/register`          | none                  | `{email,username,displayName,password}` | 201 `{user}` + cookie                       |
+| POST `/auth/login`             | none                  | `{email,password}`                      | 200 `{user}` + cookie                       |
+| POST `/auth/logout`            | none                  | —                                       | 200 `{ok}`                                  |
+| GET `/auth/me`                 | none                  | —                                       | 200 `{user\|null}`                          |
+| GET `/titles/search`           | session               | `?q=&scope=all\|local`                  | 200 `{results,tmdbEnabled,tmdbUnavailable}` |
+| POST `/titles`                 | session               | `customTitleSchema`                     | 201 `{title}`                               |
+| POST `/uploads/poster`         | session               | multipart, field `file`                 | 201 `{url}`                                 |
+| GET `/entries`                 | session               | `?status=&kind=&q=&sort=`               | 200 `{items,stats}`                         |
+| POST `/entries`                | session               | `entryUpsertSchema`                     | 200 `{item}`                                |
+| GET `/entries/:id`             | session, owner        | —                                       | 200 `{item}`                                |
+| PATCH `/entries/:id`           | session, owner        | `entryPatchSchema`                      | 200 `{item}`                                |
+| DELETE `/entries/:id`          | session, owner        | —                                       | 200 `{ok}`                                  |
+| GET `/friends`                 | session               | —                                       | 200 `{friends,incoming,outgoing}`           |
+| POST `/friends/requests`       | session               | `{username}`                            | 201 `{state:'pending'\|'accepted'}`         |
+| PATCH `/friends/requests/:id`  | session, addressee    | `{action:'accept'\|'decline'}`          | 200 `{ok}`                                  |
+| DELETE `/friends/requests/:id` | session, either party | —                                       | 200 `{ok}`                                  |
+| GET `/users/:username/library` | visibility-gated      | `?status=&kind=&q=&sort=`               | 200 `{user,items,stats}`                    |
+| PATCH `/profile`               | session               | `{displayName?,listVisibility?}`        | 200 `{user}`                                |
+| GET `/recommendations`         | session               | —                                       | 200 `{incoming,outgoing}` (pending only)    |
+| POST `/recommendations`        | session               | `recommendationCreateSchema`            | 201 `{sent,skipped}`                        |
+| PATCH `/recommendations/:id`   | session, addressee    | `{action:'accept'\|'decline'}`          | 200 `{action}`                              |
+| DELETE `/recommendations/:id`  | session, sender       | —                                       | 200 `{ok}`                                  |
+| GET `/tmdb-image/:size/:file`  | none                  | —                                       | 200 image bytes, immutable cache            |
 
 POST `/entries` carries EXACTLY ONE of `titleId` | `tmdb` | `custom` (enforced by `entryUpsertSchema.refine`).
 
@@ -172,6 +175,7 @@ POST `/recommendations` identifies the title the same three ways as POST `/entri
 
 ## CONVENTIONS
 
+- Layout (quotes, wrapping, trailing commas) is Prettier's call, configured in `.prettierrc`. Do not hand-format against it. `.vscode/settings.json` formats on save and sets `prettier.requireConfig`, so an editor never falls back to Prettier's defaults (double quotes, 80 columns).
 - Imports ordered: node builtins, external packages, `@/…` values, then `import type` lines.
 - Path alias `@/*` -> `src/*`. No relative imports across top-level directories.
 - Comments explain WHY (constraints, invariants), not WHAT. Match existing density.
